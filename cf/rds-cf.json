@@ -1,0 +1,207 @@
+{
+"Parameters" : {
+"CidrBlockParameter" : {
+"Type" : "String",
+"Default" : "10.0.0.0/16"
+},
+"InstanceTenancyParameter" : {
+"Type": "String",
+"Default" : "dedicated",
+"AllowedValues": ["dedicated", "Default"]
+},
+"VpcTagParameter": {
+"Type": "String",
+"Default": "RDS"
+},
+"MySubnetCidrBlockParameter": {
+"Type": "String",
+"Default": "10.0.5.0/24"
+},
+"MySubnetAvailabilityZoneParameter": {
+"Type": "String",
+"Default": "ap-south-1a"
+},
+"MySubnetTagParameter": {
+"Type": "String",
+"Default": "RDS"
+},
+"MySubnet1CidrBlockParameter": {
+"Type": "String",
+"Default": "10.0.9.0/24"
+},
+"MySubnet1AvailabilityZoneParameter": {
+"Type": "String",
+"Default": "ap-south-1b"
+},
+"MySubnet1TagParameter": {
+"Type": "String",
+"Default": "RDS-1"
+},
+"DBSubnetGroupNameParameter": {
+"Type": "String",
+"Default": "PrivateDbSubnet"
+},
+"DBSubnetGroupDescriptionParameter": {
+"Type": "String",
+"Default": "PrivateDbSubnet"
+},
+"DatabaseVpcSecurityGroupNameParameter": {
+"Type": "String",
+"Default": "DBSecurityGroup"
+},
+"DatabaseVpcSecurityGroupDescriptionParameter": {
+"Type": "String",
+"Default": "Allow local access"
+},
+"SecurityGroupIngressIpprotocolParameter":{
+"Type": "String",
+"Default": "tcp"
+},
+"SecurityGroupIngressFromPortParameter": {
+"Type": "String",
+"Default": "3306"
+},
+"SecurityGroupIngressToPortParameter": {
+"Type": "String",
+"Default": "3306"
+},
+"SecurityGroupIngressCidrIpParameter": {
+"Type": "String",
+"Default": "0.0.0.0/0"
+},
+"SecurityGroupEgressIpprotocolParameter":{
+"Type": "String",
+"Default": "-1"
+},
+"SecurityGroupEgressCidrIpParameter": {
+"Type": "String",
+"Default": "0.0.0.0/0"
+},
+"DatabaseVpcSecurityGroupTagParameter": {
+"Type": "String",
+"Default": "RDS"
+},
+"RDSDBParameterGroupDescriptionParameter": {
+"Type": "String",
+"Default": "CloudFormation Parameter Group"
+},
+"RDSDBParameterGroupFamilyParameter": {
+"Type": "String",
+"Default": "mysql5.7"
+},
+"DBInstanceClassParameter": {
+"Type": "String",
+"Default": "db.m4.large"
+},
+"DBAllocatedStorageParameter": {
+"Type": "String",
+"Default": "100"
+},
+"DBEngineParameter": {
+"Type": "String",
+"Default": "MySQL"
+},
+"DBEngineVersionParameter": {
+"Type": "String",
+"Default": "5.7.26"
+},
+"DBInstanceIdentifierParameter": {
+"Type": "String",
+"Default": "database-1"
+},
+"MasterUsernameParameter": { 
+"Type": "String",
+"Default": "crimson"
+},
+"MasterUserPasswordParameter": {
+"Type": "String",
+"Default": "crimsoncloud"
+}
+},
+"AWSTemplateFormatVersion": "2010-09-09",
+"Resources": {
+"myVPC" : {
+"Type": "AWS::EC2::VPC",
+"Properties" : {
+"CidrBlock" : { "Ref" : "CidrBlockParameter" },
+"InstanceTenancy" : { "Ref" : "InstanceTenancyParameter" },
+"Tags" : [ {"Key" : "Name", "Value" : { "Ref" : "VpcTagParameter" } } ]
+}
+},
+"mySubnet" : {
+"Type": "AWS::EC2::Subnet",
+"Properties": {
+"VpcId": { "Ref" : "myVPC" },
+"CidrBlock": { "Ref" : "MySubnetCidrBlockParameter" },
+"AvailabilityZone": { "Ref" : "MySubnetAvailabilityZoneParameter" },
+"Tags": [ {"Key": "Name", "Value": { "Ref" : "MySubnetTagParameter" } } ]
+}
+},
+"mySubnet1" : {
+"Type": "AWS::EC2::Subnet",
+"Properties": {
+"VpcId": { "Ref" : "myVPC" },
+"CidrBlock": { "Ref" : "MySubnet1CidrBlockParameter" },
+"AvailabilityZone": { "Ref": "MySubnet1AvailabilityZoneParameter" },
+"Tags": [ {"Key": "Name", "Value": { "Ref" : "MySubnet1TagParameter" } } ]
+}
+},
+"DBSubnetGroup": {
+"Type": "AWS::RDS::DBSubnetGroup",
+"Properties": {
+"DBSubnetGroupName": { "Ref" : "DBSubnetGroupNameParameter" },
+"DBSubnetGroupDescription": { "Ref" : "DBSubnetGroupDescriptionParameter" },
+"SubnetIds": [ {"Ref" : "mySubnet"}, {"Ref" : "mySubnet1"} ]
+}
+},
+"DatabaseVpcSecurityGroup": {
+"Type": "AWS::EC2::SecurityGroup",
+"Properties": {
+"GroupName": { "Ref" : "DatabaseVpcSecurityGroupNameParameter" },
+"GroupDescription": { "Ref" : "DatabaseVpcSecurityGroupDescriptionParameter" },
+"SecurityGroupIngress": [
+   {
+      "IpProtocol": { "Ref" : "SecurityGroupIngressIpprotocolParameter" },
+      "FromPort": { "Ref" : "SecurityGroupIngressFromPortParameter" },
+      "ToPort": { "Ref" : "SecurityGroupIngressToPortParameter" },
+      "CidrIp": { "Ref" : "SecurityGroupIngressCidrIpParameter" }
+   }
+],
+"SecurityGroupEgress": [
+   {
+      "IpProtocol": { "Ref" : "SecurityGroupEgressIpprotocolParameter" },
+      "CidrIp": { "Ref" : "SecurityGroupEgressCidrIpParameter" }
+   }
+],
+"VpcId": { "Ref" : "myVPC" },
+"Tags": [ {"Key": "Name", "Value": { "Ref" : "DatabaseVpcSecurityGroupTagParameter" } } ]
+}
+},
+"RDSDBParameterGroup": {
+    "Type": "AWS::RDS::DBParameterGroup",
+    "Properties": {
+        "Description": { "Ref" : "RDSDBParameterGroupDescriptionParameter" },
+        "Family": { "Ref" : "RDSDBParameterGroupFamilyParameter" },
+        "Parameters": {
+            "sql_mode": "IGNORE_SPACE"
+        }
+    }
+},
+"Database" : {
+ "Type" : "AWS::RDS::DBInstance",
+ "Properties" : {
+     "DBInstanceClass" : { "Ref": "DBInstanceClassParameter" },
+     "AllocatedStorage" : { "Ref": "DBAllocatedStorageParameter" },
+     "Engine" : { "Ref" : "DBEngineParameter" },
+     "EngineVersion" : { "Ref" : "DBEngineVersionParameter" },
+     "DBInstanceIdentifier" : { "Ref" : "DBInstanceIdentifierParameter"},
+     "MasterUsername" : { "Ref" : "MasterUsernameParameter" },
+     "MasterUserPassword" : { "Ref" : "MasterUserPasswordParameter"},
+     "DBSubnetGroupName": { "Ref" : "DBSubnetGroup" },
+     "DBParameterGroupName": { "Ref" : "RDSDBParameterGroup" },
+     "VPCSecurityGroups": [ { "Ref" : "DatabaseVpcSecurityGroup" } ]
+ },
+ "DeletionPolicy" : "Snapshot"
+}
+}
+}
